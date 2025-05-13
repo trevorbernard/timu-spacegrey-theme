@@ -286,17 +286,17 @@ BACKGROUND-COLOR changes the `background' color."
 
 (defcustom timu-spacegrey-transparent-background nil
   "Variable to control whether to use a transparent background.
-When enabled, background colors will be set to 'unspecified-bg',
+When enabled, background colors will be set to \"unspecified-bg\",
 allowing the terminal's background to show through."
   :type 'boolean
   :group 'timu-spacegrey-theme)
 
 (defun timu-spacegrey-set-background (color)
-  "Return COLOR or 'unspecified-bg' based on transparency setting.
-If `timu-spacegrey-transparent-background' is enabled, return 'unspecified-bg',
-otherwise return the provided COLOR."
+  "Return COLOR or \"unspecified-bg\" based on transparency setting.
+If `timu-spacegrey-transparent-background' is enabled, return
+'\"unspecified-bg\"', otherwise return the provided COLOR."
   (if timu-spacegrey-transparent-background
-      'unspecified-bg
+      "unspecified-bg"
     color))
 
 (defcustom timu-spacegrey-contrasted-foreground nil
