@@ -149,6 +149,15 @@ By default italic faces are turned on. To turn this off add the following to you
   (customize-set-variable 'timu-spacegrey-italic-faces nil)
 #+end_src
 
+** Transparent background
+You can enable a transparent background, which sets background colors to 'unspecified-bg'. This allows Emacs to use your terminal's background color instead of the theme's.
+
+By default the transparent background is turned off. To turn this on add the following to your =~/.emacs.d/init.el= or =~/.emacs=:
+
+#+begin_src emacs-lisp
+  (customize-set-variable 'timu-spacegrey-transparent-background t)
+#+end_src
+
 * Utility functions
 ** Toggle dark and light flavour of the theme
 
@@ -173,6 +182,10 @@ M-x =timu-spacegrey-toggle-contrasted-foreground= RET.
 ** Toggle toggle more contrast for comments and docs on or off
 
 M-x =timu-spacegrey-toggle-contrasted-comments= RET.
+
+** Toggle transparent background on or off
+
+M-x =timu-spacegrey-toggle-transparent-background= RET.
 
 * Supported major modes
 ace-window, alert, all-the-icons, all-the-icons-dired, all-the-icons-ivy-rich, annotate, ansi, anzu, auctex, avy, bookmark+, calfw, centaur-tabs, circe, column-enforce-mode, company, company-box, compilation, consult, corfu, counsel, cperl, custom, diff, diff-hl, dired, dired-async, dired-filetype-face, dired+, dired-k, dired-subtree, diredfl, doom-modeline, ediff, eldoc, elfeed, elixir-mode, elscreen, enh-ruby-mode, erc, eshell, evil, evil-googles, evil-mc, evil-snipe, expenses, flx-ido, flycheck, flycheck-posframe, flymake, flyspell, forge, git-commit, git-gutter, git-gutter+, git-gutter-fringe, gnus, goggles, header-line, helm, helpful, hi-lock, highlight-indentation-mode, highlight-numbers-mode, highlight-quoted-mode, highlight-symbol, highlight-thing, hl-fill-column-face, hl-line (built-in), hl-todo, hlinum, hydra, ido, iedit, imenu-list, indent-guide, isearch, ivy, ivy-posframe, jabber, jdee, js2-mode, keycast, ledger-mode, line numbers, linum, linum-relative, lsp-mode, lui, magit, make-mode, marginalia, markdown-mode, message, mic-paren, minimap, mmm-mode, mode-line, mu4e, mu4e-column-faces, mu4e-thread-folding, multiple cursors, nano-modeline, nav-flash, neotree, nlinum, nlinum-hl, nlinum-relative, notmuch, orderless, objed, org-agenda, org-habit, org-journal, org-mode, org-pomodoro, org-ref, outline, outline-minor-faces, parenface, parinfer, persp-mode, perspective, pkgbuild-mode, popup, powerline, rainbow-delimiters, re-builder, rjsx-mode, rpm-spec-mode, rst, selectrum, sh-script, show-paren, smart-mode-line, smartparens, smerge-tool, solaire-mode, spaceline, stripe-buffer, swiper, tabbar, tab-bar, tab-line, telephone-line, term, tldr, transient, treemacs, treemacs-all-the-icons, tree-sitter-hl, typescript-mode, undo-tree, vimish-fold, volatile-highlights, vterm, web-mode, wgrep, which-func, which-key, whitespace, widget, window-divider, woman, workgroups2, yasnippet, ytel

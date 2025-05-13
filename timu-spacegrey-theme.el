@@ -284,6 +284,21 @@ BACKGROUND-COLOR changes the `background' color."
   (if (eq t timu-spacegrey-italic-faces)
       (list :italic t)))
 
+(defcustom timu-spacegrey-transparent-background nil
+  "Variable to control whether to use a transparent background.
+When enabled, background colors will be set to 'unspecified-bg',
+allowing the terminal's background to show through."
+  :type 'boolean
+  :group 'timu-spacegrey-theme)
+
+(defun timu-spacegrey-set-background (color)
+  "Return COLOR or 'unspecified-bg' based on transparency setting.
+If `timu-spacegrey-transparent-background' is enabled, return 'unspecified-bg',
+otherwise return the provided COLOR."
+  (if timu-spacegrey-transparent-background
+      'unspecified-bg
+    color))
+
 (defcustom timu-spacegrey-contrasted-foreground nil
   "Variable to control the contrast of foreground faces.
 These are:
@@ -401,6 +416,16 @@ Customize `timu-spacegrey-contrasted-comments' to make your preferences permanen
     (customize-set-variable 'timu-spacegrey-contrasted-comments t))
   (load-theme (car custom-enabled-themes) t))
 
+;;;###autoload
+(defun timu-spacegrey-toggle-transparent-background ()
+  "Toggle transparent background on or off.
+Customize `timu-spacegrey-transparent-background' to make your preferences permanent."
+  (interactive)
+  (if (eq t timu-spacegrey-transparent-background)
+      (customize-set-variable 'timu-spacegrey-transparent-background nil)
+    (customize-set-variable 'timu-spacegrey-transparent-background t))
+  (load-theme (car custom-enabled-themes) t))
+
 
 (deftheme timu-spacegrey
   "Custom theme inspired by the spacegray theme in Sublime Text.
@@ -409,9 +434,9 @@ Sourced other themes to get information about font faces for packages.")
 ;;; DARK FLAVOUR
 (when (equal timu-spacegrey-flavour "dark")
   (let ((class '((class color) (min-colors 89)))
-        (bg          "#2b303b")
-        (bg-org      "#282d37")
-        (bg-other    "#232830")
+        (bg          (timu-spacegrey-set-background "#2b303b"))
+        (bg-org      (timu-spacegrey-set-background "#282d37"))
+        (bg-other    (timu-spacegrey-set-background "#232830"))
         (spacegrey0  "#1b2229")
         (spacegrey1  "#1c1f24")
         (spacegrey2  "#202328")
@@ -2063,9 +2088,9 @@ Sourced other themes to get information about font faces for packages.")
 ;;; LIGHT FLAVOUR
 (when (equal timu-spacegrey-flavour "light")
   (let ((class '((class color) (min-colors 89)))
-        (bg          "#ffffff")
-        (bg-org      "#fafafa")
-        (bg-other    "#dfdfdf")
+        (bg          (timu-spacegrey-set-background "#ffffff"))
+        (bg-org      (timu-spacegrey-set-background "#fafafa"))
+        (bg-other    (timu-spacegrey-set-background "#dfdfdf"))
         (spacegrey0  "#1b2229")
         (spacegrey1  "#1c1f24")
         (spacegrey2  "#202328")
