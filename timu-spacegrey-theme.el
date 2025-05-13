@@ -284,6 +284,53 @@ BACKGROUND-COLOR changes the `background' color."
   (if (eq t timu-spacegrey-italic-faces)
       (list :italic t)))
 
+(defcustom timu-spacegrey-transparent-background nil
+  "Variable to control whether to use a transparent background.
+
+When enabled and running Emacs in terminal mode (CLI), background colors
+will be set to the symbol `unspecified', allowing the terminal emulator's
+background to show through.
+
+This setting ONLY applies in terminal mode - GUI Emacs will always use
+solid background colors. This is intentional because:
+  1. Terminal emulators often have beautiful custom backgrounds
+  2. GUI Emacs has its own transparency system via frame parameters
+  3. Using `unspecified' in GUI can lead to unexpected inheritance
+
+This needs to be set BEFORE the theme is loaded.
+
+Technical note: The implementation uses the Emacs Lisp symbol 'unspecified
+(with a quote), not the string \"unspecified\". This distinction is crucial
+for Emacs to properly recognize it as a special value meaning \"inherit from
+parent or use display default\"."
+  :type 'boolean
+  :group 'timu-spacegrey-theme)
+
+(defun timu-spacegrey-set-background (color)
+  "Return COLOR or the symbol `unspecified' based on display type and user setting.
+
+This helper function implements conditional background transparency:
+  - If `timu-spacegrey-transparent-background' is enabled (non-nil) AND
+  - Emacs is running in terminal mode (not GUI), detected via `display-graphic-p'
+  - Then return the symbol 'unspecified (which makes the background transparent)
+  - Otherwise return the provided COLOR string unchanged
+
+The `display-graphic-p' check ensures transparency only works in terminal Emacs,
+avoiding issues with GUI Emacs where transparency is handled differently.
+
+Arguments:
+  COLOR - A color string (e.g., \"#2b303b\") to use as the background
+
+Returns:
+  Either the symbol 'unspecified or the original COLOR string
+
+Example usage in face definition:
+  (let ((bg (timu-spacegrey-set-background \"#2b303b\")))
+    `(default ((,class (:background ,bg)))))"
+  (if (and timu-spacegrey-transparent-background (not (display-graphic-p)))
+      'unspecified
+    color))
+
 (defcustom timu-spacegrey-contrasted-foreground nil
   "Variable to control the contrast of foreground faces.
 These are:
@@ -401,6 +448,34 @@ Customize `timu-spacegrey-contrasted-comments' to make your preferences permanen
     (customize-set-variable 'timu-spacegrey-contrasted-comments t))
   (load-theme (car custom-enabled-themes) t))
 
+;;;###autoload
+(defun timu-spacegrey-toggle-transparent-background ()
+  "Toggle transparent background on or off (CLI mode only).
+
+This function switches between transparent and opaque backgrounds in terminal Emacs.
+Note: This feature only works in terminal mode (emacs -nw), not in GUI Emacs.
+
+When transparency is enabled:
+  - In terminal Emacs: Background becomes transparent, showing terminal's background
+  - In GUI Emacs: No effect, backgrounds remain solid (by design)
+
+The toggle works by:
+  1. Flipping the `timu-spacegrey-transparent-background' variable
+  2. Reloading the entire theme to apply the change
+  3. Saving the preference via `customize-set-variable'
+
+To make this setting permanent, add to your init.el BEFORE loading the theme:
+  (setq timu-spacegrey-transparent-background t)
+  (load-theme 'timu-spacegrey t)
+
+You can also use the customize interface:
+  M-x customize-group RET timu-spacegrey-theme RET"
+  (interactive)
+  (if (eq t timu-spacegrey-transparent-background)
+      (customize-set-variable 'timu-spacegrey-transparent-background nil)
+    (customize-set-variable 'timu-spacegrey-transparent-background t))
+  (load-theme (car custom-enabled-themes) t))
+
 
 (deftheme timu-spacegrey
   "Custom theme inspired by the spacegray theme in Sublime Text.
@@ -409,9 +484,12 @@ Sourced other themes to get information about font faces for packages.")
 ;;; DARK FLAVOUR
 (when (equal timu-spacegrey-flavour "dark")
   (let ((class '((class color) (min-colors 89)))
-        (bg          "#2b303b")
-        (bg-org      "#282d37")
-        (bg-other    "#232830")
+        ;; Background colors - these use the helper function to support transparency in CLI mode
+        ;; When `timu-spacegrey-transparent-background' is enabled and running in terminal,
+        ;; these will become 'unspecified, allowing the terminal's background to show through
+        (bg          (timu-spacegrey-set-background "#2b303b"))
+        (bg-org      (timu-spacegrey-set-background "#282d37"))
+        (bg-other    (timu-spacegrey-set-background "#232830"))
         (spacegrey0  "#1b2229")
         (spacegrey1  "#1c1f24")
         (spacegrey2  "#202328")
@@ -459,9 +537,11 @@ Sourced other themes to get information about font faces for packages.")
      `(bold-italic ((,class (:weight bold :slant italic))))
      `(bookmark-face ((,class (:foreground ,magenta :weight bold :underline ,darkcyan))))
      `(cursor ((,class (:background ,orange))))
-     `(default ((,class (:background ,bg ,@(timu-spacegrey-set-contrasted-foreground spacegrey8 fg)))))
+     `(default ((,class (:background ,(timu-spacegrey-set-background bg)
+                                     ,@(timu-spacegrey-set-contrasted-foreground spacegrey8 fg)))))
      `(error ((,class (:foreground ,red))))
-     `(fringe ((,class (:background ,bg :foreground ,spacegrey4))))
+     `(fringe ((,class (:background ,(timu-spacegrey-set-background bg)
+                                    :foreground ,spacegrey4))))
      `(highlight ((,class (:foreground ,magenta :weight bold :underline ,darkcyan))))
      `(italic ((,class (:slant  italic))))
      `(lazy-highlight ((,class (:background ,darkblue  :foreground ,spacegrey8 :distant-foreground ,spacegrey0 :weight bold))))
@@ -473,7 +553,8 @@ Sourced other themes to get information about font faces for packages.")
      `(secondary-selection ((,class (:background ,grey :extend t))))
      `(shadow ((,class (:foreground ,spacegrey5))))
      `(success ((,class (:foreground ,green))))
-     `(tooltip ((,class (:background ,bg-other :foreground ,fg))))
+     ;; Tooltip background respects transparent background setting in CLI mode
+     `(tooltip ((,class (:background ,(timu-spacegrey-set-background bg-other) :foreground ,fg))))
      `(trailing-whitespace ((,class (:background ,red))))
      `(vertical-border ((,class (:background ,spacegrey4 :foreground ,spacegrey4))))
      `(warning ((,class (:foreground ,yellow))))
@@ -714,13 +795,14 @@ Sourced other themes to get information about font faces for packages.")
      `(column-enforce-face ((,class (:foreground ,purple :underline t))))
 
 ;;;; company - dark
+     ;; Company completion popups respect transparent background setting in CLI mode
      `(company-preview ((,class (:foreground ,spacegrey5))))
      `(company-preview-common ((,class (:background ,spacegrey3 :foreground ,orange))))
      `(company-preview-search ((,class (:background ,orange :foreground ,bg :distant-foreground ,fg :weight bold))))
-     `(company-scrollbar-bg ((,class (:background ,bg-other :foreground ,fg))))
+     `(company-scrollbar-bg ((,class (:background ,(timu-spacegrey-set-background bg-other) :foreground ,fg))))
      `(company-scrollbar-fg ((,class (:background ,orange))))
      `(company-template-field ((,class (:foreground ,green :background ,spacegrey0 :weight bold))))
-     `(company-tooltip ((,class (:background ,bg-other :foreground ,fg))))
+     `(company-tooltip ((,class (:background ,(timu-spacegrey-set-background bg-other) :foreground ,fg))))
      `(company-tooltip-annotation ((,class (:foreground ,magenta :distant-foreground ,bg))))
      `(company-tooltip-common ((,class (:foreground ,orange :distant-foreground ,spacegrey0 :weight bold))))
      `(company-tooltip-mouse ((,class (:background ,purple :foreground ,bg :distant-foreground ,fg))))
@@ -1136,7 +1218,8 @@ Sourced other themes to get information about font faces for packages.")
      `(goggles-removed ((,class (:background ,red :extend t))))
 
 ;;;; header-line - dark
-     `(header-line ((,class (:background ,bg :foreground ,fg :distant-foreground ,bg))))
+     ;; Header line respects transparent background setting in CLI mode
+     `(header-line ((,class (:background ,(timu-spacegrey-set-background bg) :foreground ,fg :distant-foreground ,bg))))
 
 ;;;; helm - dark
      `(helm-ff-directory ((,class (:foreground ,red))))
@@ -1194,7 +1277,8 @@ Sourced other themes to get information about font faces for packages.")
      `(hl-fill-column-face ((,class (:foreground ,spacegrey5 :background ,bg-other :extend t))))
 
 ;;;; hl-line (built-in) - dark
-     `(hl-line ((,class (:background ,bg-other :extend t))))
+     ;; Highlight line uses bg-other for subtle distinction (transparent in CLI when enabled)
+     `(hl-line ((,class (:background ,(timu-spacegrey-set-background bg-other) :extend t))))
 
 ;;;; hl-todo - dark
      `(hl-todo ((,class (:foreground ,red :weight bold))))
@@ -1249,7 +1333,8 @@ Sourced other themes to get information about font faces for packages.")
      `(ivy-virtual ((,class (,@(timu-spacegrey-set-italic-faces) :foreground ,fg))))
 
 ;;;; ivy-posframe - dark
-     `(ivy-posframe ((,class (:background ,bg-other))))
+     ;; Ivy posframe respects transparent background setting in CLI mode
+     `(ivy-posframe ((,class (:background ,(timu-spacegrey-set-background bg-other)))))
      `(ivy-posframe-border ((,class (:background ,spacegrey4 :foreground ,spacegrey4))))
 
 ;;;; jabber - dark
@@ -1461,11 +1546,12 @@ Sourced other themes to get information about font faces for packages.")
      `(mmm-special-submode-face ((,class (:background ,green))))
 
 ;;;; mode-line - dark
-     `(mode-line ((,class (,@(timu-spacegrey-set-mode-line-active-border spacegrey5 fg) :background ,bg-other :foreground ,fg :distant-foreground ,bg))))
+     ;; Mode-line faces respect transparent background setting in CLI mode
+     `(mode-line ((,class (,@(timu-spacegrey-set-mode-line-active-border spacegrey5 fg) :background ,(timu-spacegrey-set-background bg-other) :foreground ,fg :distant-foreground ,bg))))
      `(mode-line-buffer-id ((,class (:weight bold))))
      `(mode-line-emphasis ((,class (:foreground ,orange :distant-foreground ,bg))))
      `(mode-line-highlight ((,class (:foreground ,magenta :weight bold :underline ,darkcyan))))
-     `(mode-line-inactive ((,class (,@(timu-spacegrey-set-mode-line-inactive-border spacegrey4 spacegrey7) :background ,bg-other :foreground ,spacegrey5 :distant-foreground ,bg-other))))
+     `(mode-line-inactive ((,class (,@(timu-spacegrey-set-mode-line-inactive-border spacegrey4 spacegrey7) :background ,(timu-spacegrey-set-background bg-other) :foreground ,spacegrey5 :distant-foreground ,bg-other))))
 
 ;;;; monkeytype - dark
      `(monkeytype-correct ((,class (:foreground ,grey))))
@@ -1615,17 +1701,18 @@ Sourced other themes to get information about font faces for packages.")
      `(org-journal-highlight ((,class (:foreground ,orange))))
 
 ;;;; org-mode - dark
+     ;; Org-mode backgrounds respect transparent background setting in CLI mode
      `(org-archived ((,class (:foreground ,spacegrey5))))
-     `(org-block ((,class (:foreground ,spacegrey8 :background ,bg-org :extend t))))
-     `(org-block-background ((,class (:background ,bg-org :extend t))))
-     `(org-block-begin-line ((,class (:foreground ,spacegrey5 ,@(timu-spacegrey-set-italic-faces) :background ,bg-org :extend t ,@(timu-spacegrey-set-intense-org-colors bg bg-other)))))
-     `(org-block-end-line ((,class (:foreground ,spacegrey5 ,@(timu-spacegrey-set-italic-faces) :background ,bg-org :extend t ,@(timu-spacegrey-set-intense-org-colors bg-other bg-other)))))
+     `(org-block ((,class (:foreground ,spacegrey8 :background ,(timu-spacegrey-set-background bg-org) :extend t))))
+     `(org-block-background ((,class (:background ,(timu-spacegrey-set-background bg-org) :extend t))))
+     `(org-block-begin-line ((,class (:foreground ,spacegrey5 ,@(timu-spacegrey-set-italic-faces) :background ,(timu-spacegrey-set-background bg-org) :extend t ,@(timu-spacegrey-set-intense-org-colors bg bg-other)))))
+     `(org-block-end-line ((,class (:foreground ,spacegrey5 ,@(timu-spacegrey-set-italic-faces) :background ,(timu-spacegrey-set-background bg-org) :extend t ,@(timu-spacegrey-set-intense-org-colors bg-other bg-other)))))
      `(org-checkbox ((,class (:foreground ,green :weight bold))))
      `(org-checkbox-statistics-done ((,class (:foreground ,spacegrey5))))
      `(org-checkbox-statistics-todo ((,class (:foreground ,green :weight bold))))
      `(org-code ((,class (:foreground ,green ,@(timu-spacegrey-set-intense-org-colors bg bg-other)))))
      `(org-date ((,class (:foreground ,yellow))))
-     `(org-default ((,class (:background ,bg :foreground ,fg))))
+     `(org-default ((,class (:background ,(timu-spacegrey-set-background bg) :foreground ,fg))))
      `(org-document-info ((,class (:foreground ,orange ,@(timu-spacegrey-do-scale timu-spacegrey-scale-org-document-info 1.2) ,@(timu-spacegrey-set-intense-org-colors bg bg-other)))))
      `(org-document-title ((,class (:foreground ,orange :weight bold ,@(timu-spacegrey-do-scale timu-spacegrey-scale-org-document-title 1.3) ,@(timu-spacegrey-set-intense-org-colors orange bg-other)))))
      `(org-done ((,class (:foreground ,spacegrey5))))
@@ -2063,9 +2150,9 @@ Sourced other themes to get information about font faces for packages.")
 ;;; LIGHT FLAVOUR
 (when (equal timu-spacegrey-flavour "light")
   (let ((class '((class color) (min-colors 89)))
-        (bg          "#ffffff")
-        (bg-org      "#fafafa")
-        (bg-other    "#dfdfdf")
+        (bg          (timu-spacegrey-set-background "#ffffff"))
+        (bg-org      (timu-spacegrey-set-background "#fafafa"))
+        (bg-other    (timu-spacegrey-set-background "#dfdfdf"))
         (spacegrey0  "#1b2229")
         (spacegrey1  "#1c1f24")
         (spacegrey2  "#202328")
@@ -2141,7 +2228,8 @@ Sourced other themes to get information about font faces for packages.")
      `(secondary-selection ((,class (:background ,grey :extend t))))
      `(shadow ((,class (:foreground ,spacegrey5))))
      `(success ((,class (:foreground ,green))))
-     `(tooltip ((,class (:background ,bg-other :foreground ,fg))))
+     ;; Tooltip background respects transparent background setting in CLI mode
+     `(tooltip ((,class (:background ,(timu-spacegrey-set-background bg-other) :foreground ,fg))))
      `(trailing-whitespace ((,class (:background ,red))))
      `(vertical-border ((,class (:background ,spacegrey8 :foreground ,spacegrey8))))
      `(warning ((,class (:foreground ,yellow))))
@@ -2382,13 +2470,14 @@ Sourced other themes to get information about font faces for packages.")
      `(column-enforce-face ((,class (:foreground ,cyan :underline t))))
 
 ;;;; company - light
+     ;; Company completion popups respect transparent background setting in CLI mode
      `(company-preview ((,class (:foreground ,spacegrey5))))
      `(company-preview-common ((,class (:background ,spacegrey3 :foreground ,orange))))
-     `(company-preview-search ((,class (:background ,bg-other :foreground ,fg))))
-     `(company-scrollbar-bg ((,class (:background ,bg-other :foreground ,fg))))
+     `(company-preview-search ((,class (:background ,(timu-spacegrey-set-background bg-other) :foreground ,fg))))
+     `(company-scrollbar-bg ((,class (:background ,(timu-spacegrey-set-background bg-other) :foreground ,fg))))
      `(company-scrollbar-fg ((,class (:background ,orange))))
      `(company-template-field ((,class (:foreground ,green :background ,spacegrey0 :weight bold))))
-     `(company-tooltip ((,class (:background ,bg-other :foreground ,fg))))
+     `(company-tooltip ((,class (:background ,(timu-spacegrey-set-background bg-other) :foreground ,fg))))
      `(company-tooltip-annotation ((,class (:foreground ,magenta :distant-foreground ,bg))))
      `(company-tooltip-common ((,class (:foreground ,orange :distant-foreground ,spacegrey0 :weight bold))))
      `(company-tooltip-mouse ((,class (:background ,purple :foreground ,bg :distant-foreground ,fg))))
@@ -2804,7 +2893,8 @@ Sourced other themes to get information about font faces for packages.")
      `(goggles-removed ((,class (:background ,red :extend t))))
 
 ;;;; header-line - light
-     `(header-line ((,class (:background ,bg :foreground ,fg :distant-foreground ,bg))))
+     ;; Header line respects transparent background setting in CLI mode
+     `(header-line ((,class (:background ,(timu-spacegrey-set-background bg) :foreground ,fg :distant-foreground ,bg))))
 
 ;;;; helm - light
      `(helm-ff-directory ((,class (:foreground ,red))))
@@ -2862,7 +2952,8 @@ Sourced other themes to get information about font faces for packages.")
      `(hl-fill-column-face ((,class (:foreground ,spacegrey5 :background ,bg-other :extend t))))
 
 ;;;; hl-line (built-in) - light
-     `(hl-line ((,class (:background ,bg-other :extend t))))
+     ;; Highlight line uses bg-other for subtle distinction (transparent in CLI when enabled)
+     `(hl-line ((,class (:background ,(timu-spacegrey-set-background bg-other) :extend t))))
 
 ;;;; hl-todo - light
      `(hl-todo ((,class (:foreground ,red :weight bold))))
@@ -2917,7 +3008,8 @@ Sourced other themes to get information about font faces for packages.")
      `(ivy-virtual ((,class (,@(timu-spacegrey-set-italic-faces) :foreground ,spacegrey5))))
 
 ;;;; ivy-posframe - light
-     `(ivy-posframe ((,class (:background ,bg-other))))
+     ;; Ivy posframe respects transparent background setting in CLI mode
+     `(ivy-posframe ((,class (:background ,(timu-spacegrey-set-background bg-other)))))
      `(ivy-posframe-border ((,class (:background ,spacegrey8 :foreground ,spacegrey8))))
 
 ;;;; jabber - light
@@ -3129,11 +3221,12 @@ Sourced other themes to get information about font faces for packages.")
      `(mmm-special-submode-face ((,class (:background ,green))))
 
 ;;;; mode-line - light
+     ;; Mode-line faces respect transparent background setting in CLI mode
      `(mode-line ((,class (,@(timu-spacegrey-set-mode-line-active-border spacegrey5 spacegrey4) :background ,spacegrey8 :foreground ,fg :distant-foreground ,orange))))
      `(mode-line-buffer-id ((,class (:foreground ,fg :weight bold))))
      `(mode-line-emphasis ((,class (:foreground ,darkcyan :distant-foreground ,bg))))
      `(mode-line-highlight ((,class (:foreground ,magenta  :weight bold :underline ,darkcyan))))
-     `(mode-line-inactive ((,class (,@(timu-spacegrey-set-mode-line-inactive-border spacegrey4 spacegrey7) :background ,bg-other :foreground ,spacegrey7 :distant-foreground ,bg-other))))
+     `(mode-line-inactive ((,class (,@(timu-spacegrey-set-mode-line-inactive-border spacegrey4 spacegrey7) :background ,(timu-spacegrey-set-background bg-other) :foreground ,spacegrey7 :distant-foreground ,bg-other))))
 
 ;;;; monkeytype - light
      `(monkeytype-correct ((,class (:foreground ,grey))))
@@ -3283,17 +3376,18 @@ Sourced other themes to get information about font faces for packages.")
      `(org-journal-highlight ((,class (:foreground ,orange))))
 
 ;;;; org-mode - light
+     ;; Org-mode backgrounds respect transparent background setting in CLI mode
      `(org-archived ((,class (:foreground ,spacegrey5))))
-     `(org-block ((,class (:foreground ,fg :background ,bg-org :extend t ,@(timu-spacegrey-set-intense-org-colors bg-org bg-org)))))
-     `(org-block-background ((,class (:background ,bg-org :extend t))))
-     `(org-block-begin-line ((,class (:foreground ,spacegrey5 ,@(timu-spacegrey-set-italic-faces) :background ,bg-org :extend t ,@(timu-spacegrey-set-intense-org-colors bg l-grey)))))
-     `(org-block-end-line ((,class (:foreground ,spacegrey5 ,@(timu-spacegrey-set-italic-faces) :background ,bg-org :extend t ,@(timu-spacegrey-set-intense-org-colors bg l-grey)))))
+     `(org-block ((,class (:foreground ,fg :background ,(timu-spacegrey-set-background bg-org) :extend t ,@(timu-spacegrey-set-intense-org-colors bg-org bg-org)))))
+     `(org-block-background ((,class (:background ,(timu-spacegrey-set-background bg-org) :extend t))))
+     `(org-block-begin-line ((,class (:foreground ,spacegrey5 ,@(timu-spacegrey-set-italic-faces) :background ,(timu-spacegrey-set-background bg-org) :extend t ,@(timu-spacegrey-set-intense-org-colors bg l-grey)))))
+     `(org-block-end-line ((,class (:foreground ,spacegrey5 ,@(timu-spacegrey-set-italic-faces) :background ,(timu-spacegrey-set-background bg-org) :extend t ,@(timu-spacegrey-set-intense-org-colors bg l-grey)))))
      `(org-checkbox ((,class (:foreground ,green :weight bold))))
      `(org-checkbox-statistics-done ((,class (:foreground ,spacegrey5))))
      `(org-checkbox-statistics-todo ((,class (:foreground ,green :weight bold))))
      `(org-code ((,class (:foreground ,green ,@(timu-spacegrey-set-intense-org-colors bg l-green)))))
      `(org-date ((,class (:foreground ,yellow))))
-     `(org-default ((,class (:background ,bg :foreground ,fg))))
+     `(org-default ((,class (:background ,(timu-spacegrey-set-background bg) :foreground ,fg))))
      `(org-document-info ((,class (:foreground ,orange ,@(timu-spacegrey-do-scale timu-spacegrey-scale-org-document-info 1.2) ,@(timu-spacegrey-set-intense-org-colors bg l-orange)))))
      `(org-document-title ((,class (:foreground ,orange :weight bold ,@(timu-spacegrey-do-scale timu-spacegrey-scale-org-document-title 1.3) ,@(timu-spacegrey-set-intense-org-colors orange l-orange)))))
      `(org-done ((,class (:foreground ,spacegrey5))))
