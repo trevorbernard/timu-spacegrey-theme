@@ -291,12 +291,12 @@ terminal mode (CLI)."
   :group 'timu-spacegrey-theme)
 
 (defun timu-spacegrey-set-background (color)
-  "Return COLOR or the symbol `unspecified' based on display type and user setting.
+  "Return COLOR or 'unspecified-bg' based on display type and user setting.
 
 This helper function implements conditional background transparency:
   - If `timu-spacegrey-transparent-background' is enabled (non-nil) AND
   - Emacs is running in terminal mode (not GUI), detected via `display-graphic-p'
-  - Then return the symbol 'unspecified (which makes the background transparent)
+  - Then return 'unspecified-bg' (which makes the background transparent)
   - Otherwise return the provided COLOR string unchanged
 
 The `display-graphic-p' check ensures transparency only works in terminal Emacs,
@@ -306,13 +306,13 @@ Arguments:
   COLOR - A color string (e.g., \"#2b303b\") to use as the background
 
 Returns:
-  Either the symbol 'unspecified or the original COLOR string
+  Either 'unspecified-bg' or the original COLOR string
 
 Example usage in face definition:
   (let ((bg (timu-spacegrey-set-background \"#2b303b\")))
     `(default ((,class (:background ,bg)))))"
   (if (and timu-spacegrey-transparent-background (not (display-graphic-p)))
-      'unspecified
+      'unspecified-bg
     color))
 
 (defcustom timu-spacegrey-contrasted-foreground nil
