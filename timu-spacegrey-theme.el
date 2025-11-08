@@ -285,24 +285,8 @@ BACKGROUND-COLOR changes the `background' color."
       (list :italic t)))
 
 (defcustom timu-spacegrey-transparent-background nil
-  "Variable to control whether to use a transparent background.
-
-When enabled and running Emacs in terminal mode (CLI), background colors
-will be set to the symbol `unspecified', allowing the terminal emulator's
-background to show through.
-
-This setting ONLY applies in terminal mode - GUI Emacs will always use
-solid background colors. This is intentional because:
-  1. Terminal emulators often have beautiful custom backgrounds
-  2. GUI Emacs has its own transparency system via frame parameters
-  3. Using `unspecified' in GUI can lead to unexpected inheritance
-
-This needs to be set BEFORE the theme is loaded.
-
-Technical note: The implementation uses the Emacs Lisp symbol 'unspecified
-(with a quote), not the string \"unspecified\". This distinction is crucial
-for Emacs to properly recognize it as a special value meaning \"inherit from
-parent or use display default\"."
+  "Variable to control whether to use a transparent background when in
+terminal mode (CLI)."
   :type 'boolean
   :group 'timu-spacegrey-theme)
 
