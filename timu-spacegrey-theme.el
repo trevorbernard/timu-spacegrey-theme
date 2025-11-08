@@ -306,13 +306,13 @@ Arguments:
   COLOR - A color string (e.g., \"#2b303b\") to use as the background
 
 Returns:
-  Either the symbol 'unspecified or the original COLOR string
+  Either unspecified string or the original COLOR string
 
 Example usage in face definition:
   (let ((bg (timu-spacegrey-set-background \"#2b303b\")))
     `(default ((,class (:background ,bg)))))"
   (if (and timu-spacegrey-transparent-background (not (display-graphic-p)))
-      'unspecified
+      "unspecified"
     color))
 
 (defcustom timu-spacegrey-contrasted-foreground nil
