@@ -142,6 +142,16 @@
 ;;     To turn this on add the following to your Emacs configuration.
 ;;       (customize-set-variable 'timu-spacegrey-mode-line-border t)
 ;;
+;;   H. Transparent background
+;;     You can set the background to be transparent.
+;;     This is useful for terminal emulators with transparency enabled.
+;;     The `default' and `fringe' backgrounds are set to `unspecified',
+;;     allowing the terminal background to show through.
+;;
+;;     By default the transparent background is turned off.
+;;     To turn this on add the following to your Emacs configuration.
+;;       (customize-set-variable 'timu-spacegrey-transparent-background t)
+;;
 ;; III.  Utility functions
 ;;   A. Toggle dark and light flavour of the theme
 ;;       M-x `timu-spacegrey-toggle-dark-light' RET.
@@ -160,6 +170,9 @@
 ;;
 ;;   F. Toggle toggle more contrast for comments and docs on or off
 ;;       M-x `timu-spacegrey-toggle-contrasted-comments' RET.
+;;
+;;   G. Toggle transparent background on or off
+;;       M-x `timu-spacegrey-toggle-transparent-background' RET.
 
 
 ;;; Code:
@@ -318,6 +331,20 @@ These are:
   :type 'boolean
   :group 'timu-spacegrey-theme)
 
+(defcustom timu-spacegrey-transparent-background nil
+  "Variable to control the transparency of background colors.
+When t, the `default' and `fringe' backgrounds are set to
+`unspecified', allowing the terminal background to show through.
+Useful for terminal emulators with transparency enabled."
+  :type 'boolean
+  :group 'timu-spacegrey-theme)
+
+(defun timu-spacegrey-set-transparent-background (color)
+  "Return COLOR or \"unspecified-bg\" based on `timu-spacegrey-transparent-background'.
+Uses the TTY pseudo-color \"unspecified-bg\" which causes the terminal
+emulator's own background to show through."
+  (if timu-spacegrey-transparent-background "unspecified-bg" color))
+
 (defcustom timu-spacegrey-mode-line-border nil
   "Variable to control the border of `mode-line'.
 With a value of t the mode-line has a border."
@@ -401,6 +428,16 @@ Customize `timu-spacegrey-contrasted-comments' to make your preferences permanen
     (customize-set-variable 'timu-spacegrey-contrasted-comments t))
   (load-theme (car custom-enabled-themes) t))
 
+;;;###autoload
+(defun timu-spacegrey-toggle-transparent-background ()
+  "Toggle transparent background on or off.
+Customize `timu-spacegrey-transparent-background' to make your preferences permanent."
+  (interactive)
+  (if (eq t timu-spacegrey-transparent-background)
+      (customize-set-variable 'timu-spacegrey-transparent-background nil)
+    (customize-set-variable 'timu-spacegrey-transparent-background t))
+  (load-theme (car custom-enabled-themes) t))
+
 
 (deftheme timu-spacegrey
   "Custom theme inspired by the spacegray theme in Sublime Text.
@@ -447,7 +484,7 @@ Sourced other themes to get information about font faces for packages.")
 ;;; Custom faces - dark
 
 ;;;; timu-spacegrey-faces - dark
-     `(timu-spacegrey-default-face ((,class (:background ,bg :foreground ,fg))))
+     `(timu-spacegrey-default-face ((,class (:background ,(timu-spacegrey-set-transparent-background bg) :foreground ,fg))))
      `(timu-spacegrey-bold-face ((,class (:weight bold :foreground ,spacegrey8))))
      `(timu-spacegrey-bold-face-italic ((,class (:weight bold :slant italic :foreground ,spacegrey8))))
      `(timu-spacegrey-italic-face ((,class (:slant italic :foreground ,white))))
@@ -459,9 +496,9 @@ Sourced other themes to get information about font faces for packages.")
      `(bold-italic ((,class (:weight bold :slant italic))))
      `(bookmark-face ((,class (:foreground ,magenta :weight bold :underline ,darkcyan))))
      `(cursor ((,class (:background ,orange))))
-     `(default ((,class (:background ,bg ,@(timu-spacegrey-set-contrasted-foreground spacegrey8 fg)))))
+     `(default ((,class (:background ,(timu-spacegrey-set-transparent-background bg) ,@(timu-spacegrey-set-contrasted-foreground spacegrey8 fg)))))
      `(error ((,class (:foreground ,red))))
-     `(fringe ((,class (:background ,bg :foreground ,spacegrey4))))
+     `(fringe ((,class (:background ,(timu-spacegrey-set-transparent-background bg) :foreground ,spacegrey4))))
      `(highlight ((,class (:foreground ,magenta :weight bold :underline ,darkcyan))))
      `(italic ((,class (:slant  italic))))
      `(lazy-highlight ((,class (:background ,darkblue  :foreground ,spacegrey8 :distant-foreground ,spacegrey0 :weight bold))))
@@ -2115,7 +2152,7 @@ Sourced other themes to get information about font faces for packages.")
 ;;; Custom faces - light
 
 ;;;; timu-spacegrey-faces - light
-     `(timu-spacegrey-default-face ((,class (:background ,bg :foreground ,fg))))
+     `(timu-spacegrey-default-face ((,class (:background ,(timu-spacegrey-set-transparent-background bg) :foreground ,fg))))
      `(timu-spacegrey-bold-face ((,class (:weight bold :foreground ,spacegrey0))))
      `(timu-spacegrey-bold-face-italic ((,class (:weight bold :slant italic :foreground ,spacegrey0))))
      `(timu-spacegrey-italic-face ((,class (:slant italic :foreground ,black))))
@@ -2127,9 +2164,9 @@ Sourced other themes to get information about font faces for packages.")
      `(bold-italic ((,class (:weight bold :slant italic))))
      `(bookmark-face ((,class (:foreground ,magenta  :weight bold :underline ,darkcyan))))
      `(cursor ((,class (:background ,orange))))
-     `(default ((,class (:background ,bg ,@(timu-spacegrey-set-contrasted-foreground black fg)))))
+     `(default ((,class (:background ,(timu-spacegrey-set-transparent-background bg) ,@(timu-spacegrey-set-contrasted-foreground black fg)))))
      `(error ((,class (:foreground ,red))))
-     `(fringe ((,class (:background ,bg :foreground ,spacegrey4))))
+     `(fringe ((,class (:background ,(timu-spacegrey-set-transparent-background bg) :foreground ,spacegrey4))))
      `(highlight ((,class (:foreground ,magenta  :weight bold :underline ,darkcyan))))
      `(italic ((,class (:slant  italic))))
      `(lazy-highlight ((,class (:background ,blue  :foreground ,spacegrey8 :distant-foreground ,spacegrey0 :weight bold))))
